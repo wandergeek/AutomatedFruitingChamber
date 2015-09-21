@@ -7,17 +7,23 @@ int readingInterval = 1000;
 int RHPin = A0;
 
 //-------------- Soil Humidity -----------------
-int soilHumidityPin = A0;
-int soilHumThresholdUp = 400;
-int soilHumThresholdDown = 250;
+int soilHumiditySensorPin = A1;
+int soilHumidityPowerPin = 3;
+int maxSensorReading = 1024;
+int minSensorReading = 0;
 
 //-------------- Temperature Probe --------------
 int tempProbePin = 2; //DS18S20 Signal pin on digital 2
 OneWire tempProbe(tempProbePin);  // on digital pin 2
 
+//-------------- LCD Screen --------------
+SoftwareSerial lcd(10, 11); // RX, TX
 
 void setup(void) {
   Serial.begin(9600);
+  lcd.begin(57600);
+  pinMode(soilHumidityPowerPin,OUTPUT);
+  digitalWrite(soilHumidityPowerPin, LOW);
 }
 
 void loop(void) {
@@ -25,22 +31,24 @@ void loop(void) {
   int RH = getRH();
   int soilHumidity = getSoilHumidity();
 
-  Serial.print("Temperature: " + temperature);
-  Serial.print(" Humidity: " + RH);
-  Serial.println(" Soil Humidity: " + soilHumidity);
+  lcd.print("Temperature: " + temperature);
+  lcd.print(" Humidity: " + RH);
+  lcd.println(" Soil Humidity: " + soilHumidity);
 
-  delay(readingInterval); //just here to slow down the output so it is easier to read
+  delay(readingInterval); //slow down output
 
 }
 
-float getSoilHumidity() {
- return analogRead(soilHumidityPin);
+float getSoilHumidity() { //returns mapped soil sensor from 0 - 100
+  digitalWrite(soilHumidityPowerPin, HIGH);
+  delay(10);
+  float sensorReading = analogRead(soilHumiditySensorPin);
+  digitalWrite(soilHumidityPowerPin, LOW);
+  return map(sensorReading,minSensorReading,maxSensorReading,0,100);
 }
 
 
-float getTemp(){
-  //returns the temperature from one DS18S20 in DEG Celsius
-
+float getTemp(){    //returns the temperature from one DS18S20 in DEG Celsius
   byte data[12];
   byte addr[8];
 
